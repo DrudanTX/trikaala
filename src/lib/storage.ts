@@ -1,4 +1,4 @@
-// Local-first storage for SandhyaFlow. Each session log is keyed by date+session.
+// Local-first storage for Trikaala. Each session log is keyed by date+session.
 export type SessionKey = "pratah" | "madhyahnikam" | "sayam";
 
 export type SessionStatus = "completed" | "acknowledged"; // acknowledged = missed but noted

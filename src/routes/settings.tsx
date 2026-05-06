@@ -5,8 +5,8 @@ import { loadSettings, saveSettings, type Settings } from "@/lib/storage";
 export const Route = createFileRoute("/settings")({
   head: () => ({
     meta: [
-      { title: "You — SandhyaFlow" },
-      { name: "description", content: "Personalize SandhyaFlow: name, location for sun-aware reminders, and preferences." },
+      { title: "You — Trikaala" },
+      { name: "description", content: "Personalize Trikaala: name, location for sun-aware reminders, and preferences." },
     ],
   }),
   component: SettingsPage,
@@ -118,7 +118,7 @@ function SettingsPage() {
       </section>
 
       <p className="mt-8 text-center text-[11px] text-ink-soft/70">
-        SandhyaFlow · ॐ
+        Trikaala · ॐ
       </p>
     </div>
   );

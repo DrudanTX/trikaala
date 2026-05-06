@@ -12,7 +12,7 @@ import {
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
-      { title: "Journey — SandhyaFlow" },
+      { title: "Journey — Trikaala" },
       { name: "description", content: "Your weekly Sandhyavandhanam progress, streak, and Gayatri totals." },
     ],
   }),

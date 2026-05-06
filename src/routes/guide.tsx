@@ -7,7 +7,7 @@ import type { SessionKey } from "@/lib/storage";
 export const Route = createFileRoute("/guide")({
   head: () => ({
     meta: [
-      { title: "Guide — SandhyaFlow" },
+      { title: "Guide — Trikaala" },
       { name: "description", content: "Step-by-step guide to performing Sandhyavandhanam." },
     ],
   }),
