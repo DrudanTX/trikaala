@@ -36,6 +36,7 @@ export const Route = createRootRoute({
       { property: "og:title", content: "Trikaala — Daily Sandhyavandhanam" },
       { property: "og:description", content: "A calm, minimal companion for your daily Sandhyavandhanam practice — Pratah, Madhyahnikam, Sayam — with Gayatri mantra counts, gentle streaks, and sun-aware reminders." },
       { property: "og:type", content: "website" },
+      { name: "google-site-verification", content: "P38KtFvb0uvGr_baM5FVAzX6DTZ-YK_MMOdNGiKIElQ" },
       { name: "twitter:card", content: "summary" },
       {
         name: "google-fonts",
