@@ -5,6 +5,7 @@ import { SESSIONS, currentSession, formatTime, getSessionTimes } from "@/lib/ses
 import {
   loadLogs,
   loadSettings,
+  defaultSettings,
   recordSession,
   todayKey,
   type SessionKey,
@@ -17,7 +18,7 @@ export const Route = createFileRoute("/")({
 
 function Today() {
   const [logs, setLogs] = useState<ReturnType<typeof loadLogs>>({});
-  const [settings, setSettings] = useState(() => loadSettings());
+  const [settings, setSettings] = useState(defaultSettings);
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState<SessionKey | null>(null);
   const today = todayKey();

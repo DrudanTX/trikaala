@@ -13,7 +13,7 @@ export const Route = createFileRoute("/settings")({
 });
 
 function SettingsPage() {
-  const [s, setS] = useState<Settings>(() => loadSettings());
+  const [s, setS] = useState<Settings>(defaultSettings);
   const [status, setStatus] = useState<string>("");
 
   function update(next: Partial<Settings>) {

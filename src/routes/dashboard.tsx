@@ -20,7 +20,7 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 function Dashboard() {
-  const [logs, setLogs] = useState(() => loadLogs());
+  const [logs, setLogs] = useState<ReturnType<typeof loadLogs>>({});
   useEffect(() => setLogs(loadLogs()), []);
 
   const week = getWeekDays();
