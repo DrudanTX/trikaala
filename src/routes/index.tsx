@@ -60,7 +60,7 @@ function Today() {
         className="mb-7"
       >
         <p className="text-xs uppercase tracking-[0.2em] text-ink-soft/70">Trikaala</p>
-        <h1 className="mt-1 font-display text-3xl text-ink">{greeting}{settings.name ? `, ${settings.name}` : ""}.</h1>
+        <h1 className="mt-1 font-display text-3xl text-ink">{greeting}{mounted && settings.name ? `, ${settings.name}` : ""}.</h1>
         <p className="mt-1 text-sm text-ink-soft">
           {new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}
         </p>
