@@ -109,6 +109,17 @@ function SettingsPage() {
         </button>
       </section>
 
+      <section className="mt-4 rounded-3xl border border-border bg-card p-5 shadow-soft">
+        <p className="text-xs uppercase tracking-widest text-ink-soft/70">Privacy & Legal</p>
+        <Link
+          to="/privacy"
+          className="mt-3 flex items-center justify-between rounded-xl bg-secondary/60 px-4 py-3 text-sm text-ink transition-colors hover:bg-secondary"
+        >
+          <span>Privacy Policy</span>
+          <span aria-hidden="true" className="text-ink-soft">›</span>
+        </Link>
+      </section>
+
       <section className="mt-4 rounded-3xl border border-dashed border-border bg-card/40 p-5">
         <p className="text-xs uppercase tracking-widest text-ink-soft/70">Coming Soon</p>
         <ul className="mt-2 space-y-1 text-sm text-ink-soft">
