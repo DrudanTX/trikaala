@@ -16,8 +16,9 @@ export const Route = createFileRoute("/")({
 });
 
 function Today() {
-  const [logs, setLogs] = useState(() => loadLogs());
+  const [logs, setLogs] = useState<ReturnType<typeof loadLogs>>({});
   const [settings, setSettings] = useState(() => loadSettings());
+  const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState<SessionKey | null>(null);
   const today = todayKey();
   const todayLog = logs[today];
@@ -25,6 +26,7 @@ function Today() {
   useEffect(() => {
     setLogs(loadLogs());
     setSettings(loadSettings());
+    setMounted(true);
   }, []);
 
   const times = useMemo(
