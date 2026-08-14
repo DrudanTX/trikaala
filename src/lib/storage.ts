@@ -25,7 +25,7 @@ export interface Settings {
   name?: string;
 }
 
-const defaultSettings: Settings = {
+export const defaultSettings: Settings = {
   reminders: { pratah: true, madhyahnikam: true, sayam: true },
 };
 
