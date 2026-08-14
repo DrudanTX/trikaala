@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { loadSettings, saveSettings, type Settings } from "@/lib/storage";
+import { useEffect, useState } from "react";
+import { defaultSettings, loadSettings, saveSettings, type Settings } from "@/lib/storage";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -13,8 +13,10 @@ export const Route = createFileRoute("/settings")({
 });
 
 function SettingsPage() {
-  const [s, setS] = useState<Settings>(() => loadSettings());
+  const [s, setS] = useState<Settings>(defaultSettings);
   const [status, setStatus] = useState<string>("");
+
+  useEffect(() => setS(loadSettings()), []);
 
   function update(next: Partial<Settings>) {
     const merged = { ...s, ...next };

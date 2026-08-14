@@ -5,6 +5,7 @@ import { SESSIONS, currentSession, formatTime, getSessionTimes } from "@/lib/ses
 import {
   loadLogs,
   loadSettings,
+  defaultSettings,
   recordSession,
   todayKey,
   type SessionKey,
@@ -16,8 +17,9 @@ export const Route = createFileRoute("/")({
 });
 
 function Today() {
-  const [logs, setLogs] = useState(() => loadLogs());
-  const [settings, setSettings] = useState(() => loadSettings());
+  const [logs, setLogs] = useState<ReturnType<typeof loadLogs>>({});
+  const [settings, setSettings] = useState(defaultSettings);
+  const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState<SessionKey | null>(null);
   const today = todayKey();
   const todayLog = logs[today];
@@ -25,6 +27,7 @@ function Today() {
   useEffect(() => {
     setLogs(loadLogs());
     setSettings(loadSettings());
+    setMounted(true);
   }, []);
 
   const times = useMemo(
@@ -57,7 +60,7 @@ function Today() {
         className="mb-7"
       >
         <p className="text-xs uppercase tracking-[0.2em] text-ink-soft/70">Trikaala</p>
-        <h1 className="mt-1 font-display text-3xl text-ink">{greeting}{settings.name ? `, ${settings.name}` : ""}.</h1>
+        <h1 className="mt-1 font-display text-3xl text-ink">{greeting}{mounted && settings.name ? `, ${settings.name}` : ""}.</h1>
         <p className="mt-1 text-sm text-ink-soft">
           {new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}
         </p>
