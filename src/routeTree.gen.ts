@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as JapaRouteImport } from './routes/japa'
 import { Route as GuideRouteImport } from './routes/guide'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
@@ -24,6 +25,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JapaRoute = JapaRouteImport.update({
+  id: '/japa',
+  path: '/japa',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GuideRoute = GuideRouteImport.update({
@@ -51,6 +57,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/guide': typeof GuideRoute
+  '/japa': typeof JapaRoute
   '/privacy': typeof PrivacyRoute
   '/settings': typeof SettingsRoute
   '/sitemap/xml': typeof SitemapXmlRoute
@@ -59,6 +66,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/guide': typeof GuideRoute
+  '/japa': typeof JapaRoute
   '/privacy': typeof PrivacyRoute
   '/settings': typeof SettingsRoute
   '/sitemap/xml': typeof SitemapXmlRoute
@@ -68,6 +76,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/guide': typeof GuideRoute
+  '/japa': typeof JapaRoute
   '/privacy': typeof PrivacyRoute
   '/settings': typeof SettingsRoute
   '/sitemap/xml': typeof SitemapXmlRoute
@@ -78,16 +87,25 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/guide'
+    | '/japa'
     | '/privacy'
     | '/settings'
     | '/sitemap/xml'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/guide' | '/privacy' | '/settings' | '/sitemap/xml'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/guide'
+    | '/japa'
+    | '/privacy'
+    | '/settings'
+    | '/sitemap/xml'
   id:
     | '__root__'
     | '/'
     | '/dashboard'
     | '/guide'
+    | '/japa'
     | '/privacy'
     | '/settings'
     | '/sitemap/xml'
@@ -97,6 +115,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
   GuideRoute: typeof GuideRoute
+  JapaRoute: typeof JapaRoute
   PrivacyRoute: typeof PrivacyRoute
   SettingsRoute: typeof SettingsRoute
   SitemapXmlRoute: typeof SitemapXmlRoute
@@ -116,6 +135,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/japa': {
+      id: '/japa'
+      path: '/japa'
+      fullPath: '/japa'
+      preLoaderRoute: typeof JapaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/guide': {
@@ -153,6 +179,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
   GuideRoute: GuideRoute,
+  JapaRoute: JapaRoute,
   PrivacyRoute: PrivacyRoute,
   SettingsRoute: SettingsRoute,
   SitemapXmlRoute: SitemapXmlRoute,
