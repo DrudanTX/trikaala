@@ -27,13 +27,20 @@ export const Route = createFileRoute("/dashboard")({
 
 function Dashboard() {
   const [logs, setLogs] = useState<ReturnType<typeof loadLogs>>({});
-  useEffect(() => setLogs(loadLogs()), []);
+  const [japa, setJapa] = useState<JapaSession[]>([]);
+  useEffect(() => {
+    setLogs(loadLogs());
+    setJapa(loadHistory());
+  }, []);
 
   const week = getWeekDays();
   const streak = getStreak(logs);
   const weekly = totalGayatri(logs, week);
   const today = totalGayatri(logs, [week[week.length - 1]]);
   const pct = completionPct(logs, week);
+  const japaToday = japaTotalFor(japa, [week[week.length - 1]]);
+  const japaWeek = japaTotalFor(japa, week);
+  const recent = recentSessions(japa, 5);
 
   return (
     <div className="px-5 pt-12">
@@ -45,7 +52,36 @@ function Dashboard() {
         <Stat label="This week" value={`${pct}%`} suffix="completed" />
         <Stat label="Today's Gayatri" value={`${today}`} />
         <Stat label="Weekly Gayatri" value={`${weekly}`} />
+        <Stat label="Today's Japa" value={`${japaToday}`} />
+        <Stat label="Weekly Japa" value={`${japaWeek}`} />
       </div>
+
+      {recent.length > 0 && (
+        <>
+          <h2 className="mt-8 mb-3 font-display text-xl text-ink">Recent japa</h2>
+          <div className="space-y-2">
+            {recent.map((s) => (
+              <div
+                key={s.id}
+                className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3 shadow-soft"
+              >
+                <div>
+                  <p className="font-display text-lg text-ink">
+                    {s.count} <span className="text-sm text-ink-soft">/ {s.target}</span>
+                  </p>
+                  <p className="text-[11px] text-ink-soft">
+                    {new Date(s.completedAt).toLocaleDateString(undefined, {
+                      day: "numeric",
+                      month: "short",
+                    })}
+                  </p>
+                </div>
+                <span className="text-lg text-primary">◍</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
       <h2 className="mt-8 mb-3 font-display text-xl text-ink">Last 7 days</h2>
       <div className="rounded-3xl border border-border bg-card p-4 shadow-soft">
