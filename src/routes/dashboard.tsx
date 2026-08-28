@@ -8,6 +8,12 @@ import {
   loadLogs,
   totalGayatri,
 } from "@/lib/storage";
+import {
+  japaTotalFor,
+  loadHistory,
+  recentSessions,
+  type JapaSession,
+} from "@/lib/japa";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
