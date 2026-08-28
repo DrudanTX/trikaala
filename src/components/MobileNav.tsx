@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 
 const items = [
   { to: "/", label: "Today", icon: "◈" },
+  { to: "/japa", label: "Japa", icon: "◍" },
   { to: "/dashboard", label: "Journey", icon: "◉" },
   { to: "/guide", label: "Guide", icon: "❋" },
   { to: "/settings", label: "You", icon: "✦" },
@@ -19,7 +20,7 @@ export function MobileNav() {
             <Link
               key={it.to}
               to={it.to}
-              className="relative flex min-w-16 flex-col items-center gap-0.5 rounded-full px-3 py-1.5 text-[11px] font-medium text-ink-soft transition-colors"
+              className="relative flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-full px-2 py-1.5 text-[11px] font-medium text-ink-soft transition-colors"
             >
               {active && (
                 <motion.span

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { SESSIONS, currentSession, formatTime, getSessionTimes } from "@/lib/sessions";
@@ -80,6 +80,17 @@ function Today() {
           {todayCount === 0 ? "A still mind is the offering." : "Each repetition, a thread of light."}
         </p>
       </motion.div>
+
+      <Link
+        to="/japa"
+        className="mb-8 flex items-center justify-between rounded-3xl border border-border bg-secondary/60 p-5 shadow-soft"
+      >
+        <div>
+          <p className="font-display text-xl text-ink">Japa Counter</p>
+          <p className="mt-0.5 text-xs text-ink-soft">Count your mala — 27, 54, 108 or 1008.</p>
+        </div>
+        <span className="text-2xl text-primary">◍</span>
+      </Link>
 
       <p className="mb-3 text-xs font-medium uppercase tracking-widest text-ink-soft/70">
         Three Sandhyas
