@@ -23,10 +23,12 @@ export interface Settings {
   reminders: { pratah: boolean; madhyahnikam: boolean; sayam: boolean };
   manualTimes?: { pratah?: string; madhyahnikam?: string; sayam?: string };
   name?: string;
+  completionSound?: boolean; // mala-completion chime; default On
 }
 
 export const defaultSettings: Settings = {
   reminders: { pratah: true, madhyahnikam: true, sayam: true },
+  completionSound: true,
 };
 
 function isClient() {

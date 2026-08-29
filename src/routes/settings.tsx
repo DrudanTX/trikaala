@@ -110,6 +110,22 @@ function SettingsPage() {
       </section>
 
       <section className="mt-4 rounded-3xl border border-border bg-card p-5 shadow-soft">
+        <p className="text-xs uppercase tracking-widest text-ink-soft/70">Sound</p>
+        <p className="mt-2 text-sm text-ink-soft">
+          A soft bell chimes once when you complete a mala in the Japa Counter.
+        </p>
+        <label className="mt-3 flex items-center justify-between rounded-xl bg-secondary/60 px-4 py-3">
+          <span className="text-sm text-ink">Completion Sound</span>
+          <input
+            type="checkbox"
+            checked={s.completionSound !== false}
+            onChange={(e) => update({ completionSound: e.target.checked })}
+            className="h-5 w-5 accent-[var(--primary)]"
+          />
+        </label>
+      </section>
+
+      <section className="mt-4 rounded-3xl border border-border bg-card p-5 shadow-soft">
         <p className="text-xs uppercase tracking-widest text-ink-soft/70">Privacy & Legal</p>
         <Link
           to="/privacy"
