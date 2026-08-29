@@ -125,13 +125,20 @@ function SettingsPage() {
         </label>
       </section>
 
-      <section className="mt-4 rounded-3xl border border-border bg-card p-5 shadow-soft">
+<section className="mt-4 rounded-3xl border border-border bg-card p-5 shadow-soft">
         <p className="text-xs uppercase tracking-widest text-ink-soft/70">Privacy & Legal</p>
         <Link
           to="/privacy"
           className="mt-3 flex items-center justify-between rounded-xl bg-secondary/60 px-4 py-3 text-sm text-ink transition-colors hover:bg-secondary"
         >
           <span>Privacy Policy</span>
+          <span aria-hidden="true" className="text-ink-soft">›</span>
+        </Link>
+        <Link
+          to="/terms"
+          className="mt-2 flex items-center justify-between rounded-xl bg-secondary/60 px-4 py-3 text-sm text-ink transition-colors hover:bg-secondary"
+        >
+          <span>Terms of Service</span>
           <span aria-hidden="true" className="text-ink-soft">›</span>
         </Link>
       </section>
