@@ -14,7 +14,135 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      japa_sessions: {
+        Row: {
+          completed_count: number
+          created_at: string
+          id: string
+          practice_date: string
+          reached_target: boolean
+          target_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_count?: number
+          created_at?: string
+          id?: string
+          practice_date: string
+          reached_target?: boolean
+          target_count: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_count?: number
+          created_at?: string
+          id?: string
+          practice_date?: string
+          reached_target?: boolean
+          target_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sandhya_sessions: {
+        Row: {
+          created_at: string
+          gayatri_count: number
+          id: string
+          practice_date: string
+          sandhya: Database["public"]["Enums"]["sandhya_kind"]
+          status: Database["public"]["Enums"]["sandhya_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          gayatri_count?: number
+          id?: string
+          practice_date: string
+          sandhya: Database["public"]["Enums"]["sandhya_kind"]
+          status?: Database["public"]["Enums"]["sandhya_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          gayatri_count?: number
+          id?: string
+          practice_date?: string
+          sandhya?: Database["public"]["Enums"]["sandhya_kind"]
+          status?: Database["public"]["Enums"]["sandhya_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          created_at: string
+          id: string
+          latitude: number | null
+          location_label: string | null
+          longitude: number | null
+          reminder_madhyahnikam: boolean
+          reminder_pratah: boolean
+          reminder_sayam: boolean
+          reminders_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          latitude?: number | null
+          location_label?: string | null
+          longitude?: number | null
+          reminder_madhyahnikam?: boolean
+          reminder_pratah?: boolean
+          reminder_sayam?: boolean
+          reminders_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          latitude?: number | null
+          location_label?: string | null
+          longitude?: number | null
+          reminder_madhyahnikam?: boolean
+          reminder_pratah?: boolean
+          reminder_sayam?: boolean
+          reminders_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +151,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      sandhya_kind: "pratah" | "madhyahnikam" | "sayam"
+      sandhya_status: "completed" | "acknowledged"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +279,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      sandhya_kind: ["pratah", "madhyahnikam", "sayam"],
+      sandhya_status: ["completed", "acknowledged"],
+    },
   },
 } as const
