@@ -11,6 +11,7 @@ import {
   saveActive,
 } from "@/lib/japa";
 import { hapticLight, hapticStrong } from "@/lib/haptics";
+import { playMalaBell } from "@/lib/audio";
 
 export const Route = createFileRoute("/japa")({
   head: () => ({
@@ -95,6 +96,7 @@ function JapaCounter() {
           if (next >= target && !reachedRef.current) {
             reachedRef.current = true;
             hapticStrong();
+            playMalaBell(); // once only — reachedRef guards repeats
           } else if (next < target) {
             reachedRef.current = false;
             hapticLight();
