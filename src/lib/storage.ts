@@ -17,6 +17,8 @@ export interface DayLog {
 const KEY = "sandhyaflow:logs:v1";
 const SETTINGS_KEY = "sandhyaflow:settings:v1";
 
+export type ReminderMode = "calculated" | "custom";
+
 export interface Settings {
   lat?: number;
   lon?: number;
@@ -24,12 +26,22 @@ export interface Settings {
   manualTimes?: { pratah?: string; madhyahnikam?: string; sayam?: string };
   name?: string;
   completionSound?: boolean; // mala-completion chime; default On
+  notificationsEnabled?: boolean; // master switch for daily Sandhya reminders
+  reminderMode?: ReminderMode; // calculated (sun-based) or custom clock times
+  reminderOffset?: 0 | 5 | 10 | 15; // minutes before the Sandhya time
+  permissionDenied?: boolean; // don't nag after a denial
+  lastScheduledOn?: string; // Date.toDateString() of last schedule sync
 }
 
 export const defaultSettings: Settings = {
   reminders: { pratah: true, madhyahnikam: true, sayam: true },
   completionSound: true,
+  notificationsEnabled: false,
+  reminderMode: "calculated",
+  reminderOffset: 0,
+  manualTimes: { pratah: "06:18", madhyahnikam: "12:30", sayam: "18:30" },
 };
+
 
 function isClient() {
   return typeof window !== "undefined";
