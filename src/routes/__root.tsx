@@ -87,6 +87,8 @@ function RootComponent() {
         <Outlet />
       </div>
       <MobileNav />
+      <NotificationScheduler />
+
     </div>
   );
 }
