@@ -80,34 +80,121 @@ function SettingsPage() {
       </section>
 
       <section className="mt-4 rounded-3xl border border-border bg-card p-5 shadow-soft">
-        <p className="text-xs uppercase tracking-widest text-ink-soft/70">Reminders</p>
-        <p className="mt-2 text-sm text-ink-soft">
-          Gentle nudges around the Sandhi times. Browser notifications are best-effort.
-        </p>
-        <div className="mt-3 space-y-2">
-          {(["pratah", "madhyahnikam", "sayam"] as const).map((k) => (
-            <label key={k} className="flex items-center justify-between rounded-xl bg-secondary/60 px-4 py-3">
-              <span className="text-sm capitalize text-ink">{k}</span>
-              <input
-                type="checkbox"
-                checked={s.reminders[k]}
-                onChange={(e) => update({ reminders: { ...s.reminders, [k]: e.target.checked } })}
-                className="h-5 w-5 accent-[var(--primary)]"
-              />
-            </label>
-          ))}
-        </div>
-        <button
-          onClick={async () => {
-            if (!("Notification" in window)) return setStatus("Notifications not supported.");
-            const r = await Notification.requestPermission();
-            setStatus(r === "granted" ? "Notifications enabled." : "Notifications declined.");
-          }}
-          className="mt-3 w-full rounded-xl border border-border bg-background py-2.5 text-sm text-ink"
-        >
-          Enable browser notifications
-        </button>
+        <p className="text-xs uppercase tracking-widest text-ink-soft/70">Notifications</p>
+
+        <label className="mt-3 flex items-center justify-between rounded-xl bg-secondary/60 px-4 py-3">
+          <span className="text-sm text-ink">Daily Sandhyā Reminders</span>
+          <input
+            type="checkbox"
+            checked={s.notificationsEnabled === true}
+            onChange={(e) => toggleNotifications(e.target.checked)}
+            className="h-5 w-5 accent-[var(--primary)]"
+          />
+        </label>
+
+        {s.notificationsEnabled && (
+          <div className="mt-4 space-y-4">
+            <div>
+              <p className="text-xs uppercase tracking-widest text-ink-soft/70">Reminder Times</p>
+              <div className="mt-2 flex rounded-xl border border-border p-1">
+                {(["calculated", "custom"] as const).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => update({ reminderMode: m })}
+                    className={`flex-1 rounded-lg py-2 text-sm capitalize transition-colors ${
+                      (s.reminderMode ?? "calculated") === m
+                        ? "bg-primary text-primary-foreground"
+                        : "text-ink-soft"
+                    }`}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-xs text-ink-soft">
+                {(s.reminderMode ?? "calculated") === "calculated"
+                  ? "Follows sunrise, midday and sunset for your location — updated each day."
+                  : "Your chosen times, used every day until you change them."}
+              </p>
+            </div>
+
+            {(s.reminderMode ?? "calculated") === "custom" ? (
+              <div className="space-y-2">
+                {SESSION_ROWS.map(([k, label]) => (
+                  <label
+                    key={k}
+                    className="flex items-center justify-between rounded-xl bg-secondary/60 px-4 py-3"
+                  >
+                    <span className="text-sm text-ink">{label}</span>
+                    <input
+                      type="time"
+                      value={s.manualTimes?.[k] || ""}
+                      onChange={(e) =>
+                        update({ manualTimes: { ...s.manualTimes, [k]: e.target.value } })
+                      }
+                      className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-ink outline-none focus:border-primary"
+                    />
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {SESSION_ROWS.map(([k, label]) => (
+                  <div
+                    key={k}
+                    className="flex items-center justify-between rounded-xl bg-secondary/60 px-4 py-3"
+                  >
+                    <span className="text-sm text-ink">{label}</span>
+                    <span className="text-sm text-ink-soft">
+                      {calculated ? formatTime(calculated[k]) : "Set location"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div>
+              <p className="text-xs uppercase tracking-widest text-ink-soft/70">Remind me</p>
+              <div className="mt-2 grid grid-cols-4 gap-2">
+                {([0, 5, 10, 15] as const).map((o) => (
+                  <button
+                    key={o}
+                    onClick={() => update({ reminderOffset: o })}
+                    className={`rounded-xl border py-2 text-xs transition-colors ${
+                      (s.reminderOffset ?? 0) === o
+                        ? "border-primary bg-primary/10 text-ink"
+                        : "border-border text-ink-soft"
+                    }`}
+                  >
+                    {o === 0 ? "At time" : `${o}m before`}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {SESSION_ROWS.map(([k, label]) => (
+                <label
+                  key={k}
+                  className="flex items-center justify-between rounded-xl bg-secondary/60 px-4 py-3"
+                >
+                  <span className="text-sm text-ink">{label}</span>
+                  <input
+                    type="checkbox"
+                    checked={s.reminders[k]}
+                    onChange={(e) =>
+                      update({ reminders: { ...s.reminders, [k]: e.target.checked } })
+                    }
+                    className="h-5 w-5 accent-[var(--primary)]"
+                  />
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+        {status && <p className="mt-3 text-xs text-ink-soft">{status}</p>}
       </section>
+
 
       <section className="mt-4 rounded-3xl border border-border bg-card p-5 shadow-soft">
         <p className="text-xs uppercase tracking-widest text-ink-soft/70">Sound</p>
