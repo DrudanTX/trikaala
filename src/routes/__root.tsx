@@ -1,5 +1,7 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { MobileNav } from "@/components/MobileNav";
+import { NotificationScheduler } from "@/components/NotificationScheduler";
+
 
 import appCss from "../styles.css?url";
 
