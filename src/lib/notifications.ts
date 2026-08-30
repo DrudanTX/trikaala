@@ -1,0 +1,168 @@
+// Native (Capacitor) local notifications for Trikaala's Sandhya reminders.
+// Reuses the app's existing astronomical calculations (src/lib/sessions.ts)
+// and the existing local settings store (src/lib/storage.ts).
+import { Capacitor } from "@capacitor/core";
+import { getSessionTimes } from "./sessions";
+import { loadSettings, saveSettings, type SessionKey, type Settings } from "./storage";
+
+export const SESSION_LABELS: Record<SessionKey, { title: string; body: string }> = {
+  pratah: {
+    title: "☀️ Prātaḥ Sandhyā",
+    body: "A moment for your morning Sandhyāvandanam.",
+  },
+  madhyahnikam: {
+    title: "☀️ Mādhyāhnika",
+    body: "A moment for your midday Sandhyāvandanam.",
+  },
+  sayam: {
+    title: "🌙 Sāyam Sandhyā",
+    body: "A moment for your evening Sandhyāvandanam.",
+  },
+};
+
+const SESSION_ORDER: SessionKey[] = ["pratah", "madhyahnikam", "sayam"];
+const DAYS_AHEAD = 14;
+const CHANNEL_ID = "trikaala-sandhya";
+
+export function isNative() {
+  return typeof window !== "undefined" && Capacitor.isNativePlatform();
+}
+
+async function plugin() {
+  const { LocalNotifications } = await import("@capacitor/local-notifications");
+  return LocalNotifications;
+}
+
+/** Stable id per session per day-offset so rescheduling replaces, never duplicates. */
+function notifId(session: SessionKey, dayOffset: number) {
+  return (SESSION_ORDER.indexOf(session) + 1) * 1000 + dayOffset;
+}
+
+function parseHHMM(v: string | undefined, date: Date): Date | null {
+  if (!v) return null;
+  const m = /^(\d{1,2}):(\d{2})$/.exec(v.trim());
+  if (!m) return null;
+  const d = new Date(date);
+  d.setHours(Number(m[1]), Number(m[2]), 0, 0);
+  return d;
+}
+
+/**
+ * Resolve the reminder instant for one session on a given date, honouring the
+ * Calculated/Custom mode and the reminder offset. Returns null when unavailable.
+ */
+export function resolveReminderTime(
+  session: SessionKey,
+  settings: Settings,
+  date: Date,
+): Date | null {
+  let base: Date | null = null;
+  if (settings.reminderMode === "custom") {
+    base = parseHHMM(settings.manualTimes?.[session], date);
+  } else {
+    const times = getSessionTimes(settings.lat, settings.lon, date);
+    if (times) {
+      const t = times[session];
+      base = t instanceof Date && !isNaN(t.getTime()) ? new Date(t) : null;
+    }
+  }
+  if (!base) return null;
+  const offset = settings.reminderOffset ?? 0;
+  return new Date(base.getTime() - offset * 60_000);
+}
+
+async function cancelAll() {
+  const LN = await plugin();
+  const ids: { id: number }[] = [];
+  for (const s of SESSION_ORDER) {
+    for (let d = 0; d < DAYS_AHEAD; d++) ids.push({ id: notifId(s, d) });
+  }
+  try {
+    await LN.cancel({ notifications: ids });
+  } catch {
+    /* nothing scheduled */
+  }
+}
+
+export async function ensurePermission(request = false): Promise<"granted" | "denied" | "prompt"> {
+  if (!isNative()) {
+    if (typeof Notification === "undefined") return "denied";
+    if (Notification.permission === "granted") return "granted";
+    if (Notification.permission === "denied") return "denied";
+    if (!request) return "prompt";
+    return (await Notification.requestPermission()) === "granted" ? "granted" : "denied";
+  }
+  const LN = await plugin();
+  let status = await LN.checkPermissions();
+  if (status.display !== "granted" && request) {
+    status = await LN.requestPermissions();
+  }
+  if (status.display === "granted") return "granted";
+  if (status.display === "denied") return "denied";
+  return "prompt";
+}
+
+async function ensureChannel() {
+  if (Capacitor.getPlatform() !== "android") return;
+  const LN = await plugin();
+  try {
+    await LN.createChannel({
+      id: CHANNEL_ID,
+      name: "Sandhyā Reminders",
+      description: "Gentle daily reminders for Prātaḥ, Mādhyāhnika and Sāyam Sandhyā.",
+      importance: 4,
+      visibility: 1,
+      vibration: true,
+      sound: undefined,
+    });
+  } catch {
+    /* channel already exists */
+  }
+}
+
+/**
+ * Cancel and re-create the full reminder schedule from current settings.
+ * Safe to call on every app start, settings change, or date change.
+ */
+export async function syncNotifications(settings: Settings = loadSettings()): Promise<number> {
+  if (!isNative()) return 0;
+  const LN = await plugin();
+  await ensureChannel();
+  await cancelAll();
+
+  if (settings.notificationsEnabled === false) return 0;
+  const perm = await ensurePermission(false);
+  if (perm !== "granted") return 0;
+
+  const now = Date.now();
+  const notifications: Parameters<typeof LN.schedule>[0]["notifications"] = [];
+
+  for (let d = 0; d < DAYS_AHEAD; d++) {
+    const date = new Date();
+    date.setDate(date.getDate() + d);
+    date.setHours(12, 0, 0, 0);
+    for (const s of SESSION_ORDER) {
+      if (!settings.reminders[s]) continue;
+      const at = resolveReminderTime(s, settings, date);
+      if (!at || at.getTime() <= now + 30_000) continue;
+      notifications.push({
+        id: notifId(s, d),
+        title: SESSION_LABELS[s].title,
+        body: SESSION_LABELS[s].body,
+        channelId: CHANNEL_ID,
+        smallIcon: "ic_launcher_foreground",
+        schedule: { at, allowWhileIdle: true },
+      });
+    }
+  }
+
+  if (notifications.length) await LN.schedule({ notifications });
+  const s = { ...settings, lastScheduledOn: new Date().toDateString() };
+  saveSettings(s);
+  return notifications.length;
+}
+
+export async function cancelAllNotifications() {
+  if (!isNative()) return;
+  await cancelAll();
+}
