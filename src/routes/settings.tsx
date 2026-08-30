@@ -1,6 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { defaultSettings, loadSettings, saveSettings, type Settings } from "@/lib/storage";
+import { useEffect, useMemo, useState } from "react";
+import { defaultSettings, loadSettings, saveSettings, type SessionKey, type Settings } from "@/lib/storage";
+import { formatTime, getSessionTimes } from "@/lib/sessions";
+import { ensurePermission, isNative, syncNotifications, cancelAllNotifications } from "@/lib/notifications";
+
+const SESSION_ROWS: [SessionKey, string][] = [
+  ["pratah", "Prātaḥ Sandhyā"],
+  ["madhyahnikam", "Mādhyāhnika"],
+  ["sayam", "Sāyam Sandhyā"],
+];
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -18,10 +26,35 @@ function SettingsPage() {
 
   useEffect(() => setS(loadSettings()), []);
 
+  const calculated = useMemo(() => getSessionTimes(s.lat, s.lon), [s.lat, s.lon]);
+
   function update(next: Partial<Settings>) {
     const merged = { ...s, ...next };
     setS(merged);
     saveSettings(merged);
+    void syncNotifications(merged);
+  }
+
+  async function toggleNotifications(on: boolean) {
+    if (!on) {
+      update({ notificationsEnabled: false });
+      await cancelAllNotifications();
+      setStatus("Reminders turned off.");
+      return;
+    }
+    setStatus("Trikaala uses notifications only to gently remind you at your Sandhyā times.");
+    const perm = await ensurePermission(!s.permissionDenied);
+    if (perm !== "granted") {
+      update({ notificationsEnabled: false, permissionDenied: true });
+      setStatus(
+        isNative()
+          ? "Notifications are blocked. Enable them for Trikaala in your device Settings → Notifications."
+          : "Notifications are blocked in your browser settings.",
+      );
+      return;
+    }
+    update({ notificationsEnabled: true, permissionDenied: false });
+    setStatus("Reminders scheduled.");
   }
 
   function detectLocation() {
@@ -38,6 +71,7 @@ function SettingsPage() {
       () => setStatus("Couldn't get location."),
     );
   }
+
 
   return (
     <div className="px-5 pt-12">
