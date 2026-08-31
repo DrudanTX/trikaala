@@ -11,6 +11,7 @@ import {
   type SessionKey,
 } from "@/lib/storage";
 import { SessionSheet } from "@/components/SessionSheet";
+import { japaTotalFor, loadHistory, type JapaSession } from "@/lib/japa";
 
 export const Route = createFileRoute("/")({
   component: Today,
@@ -19,15 +20,23 @@ export const Route = createFileRoute("/")({
 function Today() {
   const [logs, setLogs] = useState<ReturnType<typeof loadLogs>>({});
   const [settings, setSettings] = useState(defaultSettings);
+  const [japaHistory, setJapaHistory] = useState<JapaSession[]>([]);
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState<SessionKey | null>(null);
   const today = todayKey();
   const todayLog = logs[today];
 
   useEffect(() => {
-    setLogs(loadLogs());
-    setSettings(loadSettings());
+    function refresh() {
+      setLogs(loadLogs());
+      setSettings(loadSettings());
+      setJapaHistory(loadHistory());
+    }
+    refresh();
     setMounted(true);
+    // Pick up japa sessions completed in another tab/screen.
+    window.addEventListener("focus", refresh);
+    return () => window.removeEventListener("focus", refresh);
   }, []);
 
   const times = useMemo(
@@ -40,9 +49,10 @@ function Today() {
     return c === "pratah" ? "Good morning" : c === "madhyahnikam" ? "Good afternoon" : "Good evening";
   })();
 
-  const todayCount = todayLog
+  const sessionCount = todayLog
     ? Object.values(todayLog.sessions).reduce((s, v) => s + (v?.gayatriCount || 0), 0)
     : 0;
+  const todayCount = sessionCount + japaTotalFor(japaHistory, [today]);
 
   function handleConfirm(status: "completed" | "acknowledged", count: number) {
     if (!open) return;
