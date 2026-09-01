@@ -32,7 +32,9 @@ function SettingsPage() {
     const merged = { ...s, ...next };
     setS(merged);
     saveSettings(merged);
-    void syncNotifications(merged);
+    void syncNotifications(merged).then((r) => {
+      if (merged.notificationsEnabled && r.reason) setStatus(r.reason);
+    });
   }
 
   async function toggleNotifications(on: boolean) {
@@ -42,8 +44,8 @@ function SettingsPage() {
       setStatus("Reminders turned off.");
       return;
     }
-    setStatus("Trikaala uses notifications only to gently remind you at your Sandhyā times.");
-    const perm = await ensurePermission(!s.permissionDenied);
+    setStatus("Requesting notification permission…");
+    const perm = await ensurePermission(true);
     if (perm !== "granted") {
       update({ notificationsEnabled: false, permissionDenied: true });
       setStatus(
@@ -53,9 +55,25 @@ function SettingsPage() {
       );
       return;
     }
-    update({ notificationsEnabled: true, permissionDenied: false });
-    setStatus("Reminders scheduled.");
+    const merged = { ...s, notificationsEnabled: true, permissionDenied: false };
+    setS(merged);
+    saveSettings(merged);
+    const r = await syncNotifications(merged);
+    setStatus(r.scheduled ? `Reminders scheduled (${r.scheduled} upcoming).` : (r.reason ?? "Nothing to schedule."));
   }
+
+  async function runTestNotification() {
+    setTesting(true);
+    setStatus("Testing…");
+    try {
+      setStatus(await sendTestNotification());
+    } catch (e) {
+      setStatus(`Test failed: ${(e as Error)?.message ?? String(e)}`);
+    } finally {
+      setTesting(false);
+    }
+  }
+
 
   function detectLocation() {
     if (!navigator.geolocation) {
