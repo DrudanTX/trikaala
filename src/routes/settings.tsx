@@ -62,19 +62,6 @@ function SettingsPage() {
     setStatus(r.scheduled ? `Reminders scheduled (${r.scheduled} upcoming).` : (r.reason ?? "Nothing to schedule."));
   }
 
-  async function runTestNotification() {
-    setTesting(true);
-    setStatus("Testing…");
-    try {
-      setStatus(await sendTestNotification());
-    } catch (e) {
-      setStatus(`Test failed: ${(e as Error)?.message ?? String(e)}`);
-    } finally {
-      setTesting(false);
-    }
-  }
-
-
   function detectLocation() {
     if (!navigator.geolocation) {
       setStatus("Geolocation not available.");
