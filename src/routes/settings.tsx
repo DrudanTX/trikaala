@@ -246,20 +246,6 @@ function SettingsPage() {
           </div>
         )}
 
-        <div className="mt-4 rounded-xl border border-dashed border-border p-4">
-          <p className="text-xs uppercase tracking-widest text-ink-soft/70">Developer</p>
-          <button
-            onClick={runTestNotification}
-            disabled={testing}
-            className="mt-2 w-full rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground disabled:opacity-60"
-          >
-            {testing ? "Scheduling…" : "Test Notification"}
-          </button>
-          <p className="mt-2 text-xs text-ink-soft">
-            Schedules one notification 60 seconds from now to verify permissions and delivery.
-          </p>
-        </div>
-
         {status && <p className="mt-3 text-xs text-ink-soft">{status}</p>}
       </section>
 

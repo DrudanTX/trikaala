@@ -10,7 +10,7 @@ interface Props {
   onConfirm: (status: "completed" | "acknowledged", count: number) => void;
 }
 
-const QUICK = [11, 32, 64, 108];
+const QUICK = [11, 27, 54, 108];
 
 export function SessionSheet({ open, session, onClose, onConfirm }: Props) {
   const [count, setCount] = useState<number | "">("");
