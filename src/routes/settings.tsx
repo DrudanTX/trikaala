@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { defaultSettings, loadSettings, saveSettings, type SessionKey, type Settings } from "@/lib/storage";
 import { formatTime, getSessionTimes } from "@/lib/sessions";
-import { ensurePermission, isNative, syncNotifications, cancelAllNotifications, sendTestNotification } from "@/lib/notifications";
+import { ensurePermission, isNative, syncNotifications, cancelAllNotifications } from "@/lib/notifications";
 
 const SESSION_ROWS: [SessionKey, string][] = [
   ["pratah", "Prātaḥ Sandhyā"],
@@ -23,7 +23,6 @@ export const Route = createFileRoute("/settings")({
 function SettingsPage() {
   const [s, setS] = useState<Settings>(defaultSettings);
   const [status, setStatus] = useState<string>("");
-  const [testing, setTesting] = useState(false);
 
   useEffect(() => setS(loadSettings()), []);
 
