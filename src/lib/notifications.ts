@@ -120,19 +120,28 @@ async function ensureChannel() {
   }
 }
 
+export interface SyncResult {
+  scheduled: number;
+  reason?: string;
+}
+
 /**
  * Cancel and re-create the full reminder schedule from current settings.
  * Safe to call on every app start, settings change, or date change.
  */
-export async function syncNotifications(settings: Settings = loadSettings()): Promise<number> {
-  if (!isNative()) return 0;
+export async function syncNotifications(settings: Settings = loadSettings()): Promise<SyncResult> {
+  if (!isNative()) return { scheduled: 0, reason: "Native reminders only run in the installed app." };
   const LN = await plugin();
   await ensureChannel();
   await cancelAll();
 
-  if (settings.notificationsEnabled === false) return 0;
+  if (settings.notificationsEnabled === false) return { scheduled: 0, reason: "Reminders are off." };
   const perm = await ensurePermission(false);
-  if (perm !== "granted") return 0;
+  if (perm !== "granted") return { scheduled: 0, reason: "Notification permission not granted." };
+
+  if ((settings.reminderMode ?? "calculated") === "calculated" && settings.lat == null) {
+    return { scheduled: 0, reason: "Set your location to compute Sandhyā times." };
+  }
 
   const now = Date.now();
   const notifications: Parameters<typeof LN.schedule>[0]["notifications"] = [];
@@ -156,13 +165,71 @@ export async function syncNotifications(settings: Settings = loadSettings()): Pr
     }
   }
 
-  if (notifications.length) await LN.schedule({ notifications });
+  try {
+    if (notifications.length) await LN.schedule({ notifications });
+  } catch (e) {
+    console.error("[trikaala] schedule failed", e);
+    return { scheduled: 0, reason: `Scheduling failed: ${(e as Error)?.message ?? e}` };
+  }
   const s = { ...settings, lastScheduledOn: new Date().toDateString() };
   saveSettings(s);
-  return notifications.length;
+  console.log("[trikaala] scheduled reminders:", notifications.length);
+  return {
+    scheduled: notifications.length,
+    reason: notifications.length ? undefined : "No upcoming reminder times to schedule.",
+  };
+}
+
+/**
+ * Developer/test helper: schedule one notification 60 seconds from now.
+ * Throws with a readable message so the UI can surface failures.
+ */
+export async function sendTestNotification(): Promise<string> {
+  if (!isNative()) {
+    const perm = await ensurePermission(true);
+    console.log("[trikaala] web permission:", perm);
+    if (perm !== "granted") throw new Error(`Permission ${perm}. Allow notifications in your browser.`);
+    setTimeout(() => {
+      new Notification("☀️ Trikaala Test", { body: "Local notifications are working!" });
+    }, 60_000);
+    return "Browser test notification set for 60s (install the app for native reminders).";
+  }
+
+  const LN = await plugin();
+  const before = await LN.checkPermissions();
+  console.log("[trikaala] checkPermissions:", JSON.stringify(before));
+  let display = before.display;
+  if (display !== "granted") {
+    const req = await LN.requestPermissions();
+    console.log("[trikaala] requestPermissions:", JSON.stringify(req));
+    display = req.display;
+  }
+  if (display !== "granted") {
+    throw new Error(`Permission ${display}. Enable notifications for Trikaala in device Settings.`);
+  }
+
+  await ensureChannel();
+  const at = new Date(Date.now() + 60_000);
+  const res = await LN.schedule({
+    notifications: [
+      {
+        id: 99999,
+        title: "☀️ Trikaala Test",
+        body: "Local notifications are working!",
+        channelId: CHANNEL_ID,
+        smallIcon: "ic_launcher_foreground",
+        schedule: { at, allowWhileIdle: true },
+      },
+    ],
+  });
+  console.log("[trikaala] schedule result:", JSON.stringify(res));
+  const pending = await LN.getPending();
+  console.log("[trikaala] pending:", JSON.stringify(pending));
+  return `Scheduled for ${at.toLocaleTimeString()} (${pending.notifications.length} pending).`;
 }
 
 export async function cancelAllNotifications() {
   if (!isNative()) return;
   await cancelAll();
 }
+
