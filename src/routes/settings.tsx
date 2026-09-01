@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { defaultSettings, loadSettings, saveSettings, type SessionKey, type Settings } from "@/lib/storage";
 import { formatTime, getSessionTimes } from "@/lib/sessions";
-import { ensurePermission, isNative, syncNotifications, cancelAllNotifications } from "@/lib/notifications";
+import { ensurePermission, isNative, syncNotifications, cancelAllNotifications, sendTestNotification } from "@/lib/notifications";
 
 const SESSION_ROWS: [SessionKey, string][] = [
   ["pratah", "Prātaḥ Sandhyā"],
@@ -23,6 +23,7 @@ export const Route = createFileRoute("/settings")({
 function SettingsPage() {
   const [s, setS] = useState<Settings>(defaultSettings);
   const [status, setStatus] = useState<string>("");
+  const [testing, setTesting] = useState(false);
 
   useEffect(() => setS(loadSettings()), []);
 
@@ -32,7 +33,9 @@ function SettingsPage() {
     const merged = { ...s, ...next };
     setS(merged);
     saveSettings(merged);
-    void syncNotifications(merged);
+    void syncNotifications(merged).then((r) => {
+      if (merged.notificationsEnabled && r.reason) setStatus(r.reason);
+    });
   }
 
   async function toggleNotifications(on: boolean) {
@@ -42,8 +45,8 @@ function SettingsPage() {
       setStatus("Reminders turned off.");
       return;
     }
-    setStatus("Trikaala uses notifications only to gently remind you at your Sandhyā times.");
-    const perm = await ensurePermission(!s.permissionDenied);
+    setStatus("Requesting notification permission…");
+    const perm = await ensurePermission(true);
     if (perm !== "granted") {
       update({ notificationsEnabled: false, permissionDenied: true });
       setStatus(
@@ -53,9 +56,25 @@ function SettingsPage() {
       );
       return;
     }
-    update({ notificationsEnabled: true, permissionDenied: false });
-    setStatus("Reminders scheduled.");
+    const merged = { ...s, notificationsEnabled: true, permissionDenied: false };
+    setS(merged);
+    saveSettings(merged);
+    const r = await syncNotifications(merged);
+    setStatus(r.scheduled ? `Reminders scheduled (${r.scheduled} upcoming).` : (r.reason ?? "Nothing to schedule."));
   }
+
+  async function runTestNotification() {
+    setTesting(true);
+    setStatus("Testing…");
+    try {
+      setStatus(await sendTestNotification());
+    } catch (e) {
+      setStatus(`Test failed: ${(e as Error)?.message ?? String(e)}`);
+    } finally {
+      setTesting(false);
+    }
+  }
+
 
   function detectLocation() {
     if (!navigator.geolocation) {
@@ -226,8 +245,24 @@ function SettingsPage() {
             </div>
           </div>
         )}
+
+        <div className="mt-4 rounded-xl border border-dashed border-border p-4">
+          <p className="text-xs uppercase tracking-widest text-ink-soft/70">Developer</p>
+          <button
+            onClick={runTestNotification}
+            disabled={testing}
+            className="mt-2 w-full rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground disabled:opacity-60"
+          >
+            {testing ? "Scheduling…" : "Test Notification"}
+          </button>
+          <p className="mt-2 text-xs text-ink-soft">
+            Schedules one notification 60 seconds from now to verify permissions and delivery.
+          </p>
+        </div>
+
         {status && <p className="mt-3 text-xs text-ink-soft">{status}</p>}
       </section>
+
 
 
       <section className="mt-4 rounded-3xl border border-border bg-card p-5 shadow-soft">
