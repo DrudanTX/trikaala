@@ -20,7 +20,7 @@ const STEPS: { title: string; body: string }[] = [
   { title: "Sankalpa", body: "Set the intention: place, time, and the quiet purpose of this Sandhya." },
   { title: "Marjanam", body: "Sprinkle water with mantras — the symbolic cleansing of the inner field." },
   { title: "Arghyam", body: "Offer water to the Sun at the meeting of two times — the Sandhi." },
-  { title: "Gayatri Japa", body: "Repeat the Gayatri mantra with awareness. 11, 32, 64, 108 — or whatever the moment allows." },
+  { title: "Gayatri Japa", body: "Repeat the Gayatri mantra with awareness. 11, 27, 54, 108 — or whatever the moment allows." },
   { title: "Upasthanam", body: "Stand in salutation. Offer the practice back to the Light." },
 ];
 
