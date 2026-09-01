@@ -180,54 +180,6 @@ export async function syncNotifications(settings: Settings = loadSettings()): Pr
   };
 }
 
-/**
- * Developer/test helper: schedule one notification 60 seconds from now.
- * Throws with a readable message so the UI can surface failures.
- */
-export async function sendTestNotification(): Promise<string> {
-  if (!isNative()) {
-    const perm = await ensurePermission(true);
-    console.log("[trikaala] web permission:", perm);
-    if (perm !== "granted") throw new Error(`Permission ${perm}. Allow notifications in your browser.`);
-    setTimeout(() => {
-      new Notification("☀️ Trikaala Test", { body: "Local notifications are working!" });
-    }, 60_000);
-    return "Browser test notification set for 60s (install the app for native reminders).";
-  }
-
-  const LN = await plugin();
-  const before = await LN.checkPermissions();
-  console.log("[trikaala] checkPermissions:", JSON.stringify(before));
-  let display = before.display;
-  if (display !== "granted") {
-    const req = await LN.requestPermissions();
-    console.log("[trikaala] requestPermissions:", JSON.stringify(req));
-    display = req.display;
-  }
-  if (display !== "granted") {
-    throw new Error(`Permission ${display}. Enable notifications for Trikaala in device Settings.`);
-  }
-
-  await ensureChannel();
-  const at = new Date(Date.now() + 60_000);
-  const res = await LN.schedule({
-    notifications: [
-      {
-        id: 99999,
-        title: "☀️ Trikaala Test",
-        body: "Local notifications are working!",
-        channelId: CHANNEL_ID,
-        smallIcon: "ic_launcher_foreground",
-        schedule: { at, allowWhileIdle: true },
-      },
-    ],
-  });
-  console.log("[trikaala] schedule result:", JSON.stringify(res));
-  const pending = await LN.getPending();
-  console.log("[trikaala] pending:", JSON.stringify(pending));
-  return `Scheduled for ${at.toLocaleTimeString()} (${pending.notifications.length} pending).`;
-}
-
 export async function cancelAllNotifications() {
   if (!isNative()) return;
   await cancelAll();
