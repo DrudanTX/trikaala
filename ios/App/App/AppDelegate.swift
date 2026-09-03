@@ -1,13 +1,16 @@
 import UIKit
 import Capacitor
 
+@_silgen_name("trikaala_retain_capacitor_plugins")
+func retainCapacitorPlugins()
+
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        retainCapacitorPlugins()
         return true
     }
 
