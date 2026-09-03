@@ -23,6 +23,7 @@ export const Route = createFileRoute("/settings")({
 function SettingsPage() {
   const [s, setS] = useState<Settings>(defaultSettings);
   const [status, setStatus] = useState<string>("");
+  const [requestingNotifications, setRequestingNotifications] = useState(false);
 
   useEffect(() => setS(loadSettings()), []);
 
@@ -44,22 +45,42 @@ function SettingsPage() {
       setStatus("Reminders turned off.");
       return;
     }
+
+    setRequestingNotifications(true);
     setStatus("Requesting notification permission…");
-    const perm = await ensurePermission(true);
-    if (perm !== "granted") {
-      update({ notificationsEnabled: false, permissionDenied: true });
+    try {
+      const perm = await ensurePermission(true);
+      if (perm !== "granted") {
+        const merged = { ...s, notificationsEnabled: false, permissionDenied: perm === "denied" };
+        setS(merged);
+        saveSettings(merged);
+        setStatus(
+          perm === "denied"
+            ? isNative()
+              ? "Notifications are blocked. Enable them for Trikaala in your device Settings → Notifications."
+              : "Notifications are blocked in your browser settings."
+            : "The permission request did not complete. Please close and reopen Trikaala, then try again.",
+        );
+        return;
+      }
+      const merged = { ...s, notificationsEnabled: true, permissionDenied: false };
+      setS(merged);
+      saveSettings(merged);
+      const result = await syncNotifications(merged);
       setStatus(
-        isNative()
-          ? "Notifications are blocked. Enable them for Trikaala in your device Settings → Notifications."
-          : "Notifications are blocked in your browser settings.",
+        result.scheduled
+          ? `Reminders scheduled (${result.scheduled} upcoming).`
+          : (result.reason ?? "Notification permission enabled."),
       );
-      return;
+    } catch (error) {
+      console.error("[Notifications] Unable to enable reminders:", error);
+      const merged = { ...s, notificationsEnabled: false };
+      setS(merged);
+      saveSettings(merged);
+      setStatus(error instanceof Error ? error.message : "Unable to enable notifications. Please try again.");
+    } finally {
+      setRequestingNotifications(false);
     }
-    const merged = { ...s, notificationsEnabled: true, permissionDenied: false };
-    setS(merged);
-    saveSettings(merged);
-    const r = await syncNotifications(merged);
-    setStatus(r.scheduled ? `Reminders scheduled (${r.scheduled} upcoming).` : (r.reason ?? "Nothing to schedule."));
   }
 
   function detectLocation() {
@@ -100,9 +121,9 @@ function SettingsPage() {
         </p>
         <div className="mt-3 flex items-center justify-between gap-3">
           <div className="text-sm text-ink">
-            {s.lat != null ? (
+            {s.lat != null && s.lon != null ? (
               <>
-                <span className="font-medium">{s.lat.toFixed(2)}, {s.lon!.toFixed(2)}</span>
+                <span className="font-medium">{s.lat.toFixed(2)}, {s.lon.toFixed(2)}</span>
               </>
             ) : (
               <span className="text-ink-soft">Not set</span>
@@ -126,6 +147,7 @@ function SettingsPage() {
           <input
             type="checkbox"
             checked={s.notificationsEnabled === true}
+            disabled={requestingNotifications}
             onChange={(e) => toggleNotifications(e.target.checked)}
             className="h-5 w-5 accent-[var(--primary)]"
           />

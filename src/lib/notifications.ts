@@ -23,14 +23,37 @@ export const SESSION_LABELS: Record<SessionKey, { title: string; body: string }>
 const SESSION_ORDER: SessionKey[] = ["pratah", "madhyahnikam", "sayam"];
 const DAYS_AHEAD = 14;
 const CHANNEL_ID = "trikaala-sandhya";
+const NATIVE_CALL_TIMEOUT_MS = 15_000;
+
+export type NotificationPermission = "granted" | "denied" | "prompt";
 
 export function isNative() {
   return typeof window !== "undefined" && Capacitor.isNativePlatform();
 }
 
 async function plugin() {
+  if (!Capacitor.isPluginAvailable("LocalNotifications")) {
+    throw new Error("The native Local Notifications plugin is unavailable. Re-sync and rebuild the iOS app.");
+  }
   const { LocalNotifications } = await import("@capacitor/local-notifications");
   return LocalNotifications;
+}
+
+async function withNativeTimeout<T>(operation: string, promise: Promise<T>): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error(`${operation} did not respond. Close and reopen Trikaala, then try again.`)),
+          NATIVE_CALL_TIMEOUT_MS,
+        );
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 /** Stable id per session per day-offset so rescheduling replaces, never duplicates. */
@@ -84,19 +107,38 @@ async function cancelAll() {
   }
 }
 
-export async function ensurePermission(request = false): Promise<"granted" | "denied" | "prompt"> {
+export async function ensurePermission(request = false): Promise<NotificationPermission> {
   if (!isNative()) {
+    console.info("[Notifications] Environment: web");
     if (typeof Notification === "undefined") return "denied";
     if (Notification.permission === "granted") return "granted";
     if (Notification.permission === "denied") return "denied";
     if (!request) return "prompt";
     return (await Notification.requestPermission()) === "granted" ? "granted" : "denied";
   }
+
+  const platform = Capacitor.getPlatform();
+  console.info(`[Notifications] Environment: native ${platform}`);
   const LN = await plugin();
-  let status = await LN.checkPermissions();
+
+  console.info("[Notifications] Checking permission");
+  let status = await withNativeTimeout("Checking notification permission", LN.checkPermissions());
+  console.info("[Notifications] Permission state:", status.display);
+
   if (status.display !== "granted" && request) {
-    status = await LN.requestPermissions();
+    console.info("[Notifications] Requesting permission");
+    try {
+      await withNativeTimeout("Requesting notification permission", LN.requestPermissions());
+    } catch (error) {
+      console.error("[Notifications] Permission request failed:", error);
+      // iOS can update authorization even if the bridge callback is interrupted.
+      // Re-read the OS state once before reporting the native call as failed.
+    }
+
+    status = await withNativeTimeout("Reading notification permission", LN.checkPermissions());
+    console.info("[Notifications] Permission result:", status.display);
   }
+
   if (status.display === "granted") return "granted";
   if (status.display === "denied") return "denied";
   return "prompt";
@@ -131,53 +173,56 @@ export interface SyncResult {
  */
 export async function syncNotifications(settings: Settings = loadSettings()): Promise<SyncResult> {
   if (!isNative()) return { scheduled: 0, reason: "Native reminders only run in the installed app." };
-  const LN = await plugin();
-  await ensureChannel();
-  await cancelAll();
-
-  if (settings.notificationsEnabled === false) return { scheduled: 0, reason: "Reminders are off." };
-  const perm = await ensurePermission(false);
-  if (perm !== "granted") return { scheduled: 0, reason: "Notification permission not granted." };
-
-  if ((settings.reminderMode ?? "calculated") === "calculated" && settings.lat == null) {
-    return { scheduled: 0, reason: "Set your location to compute Sandhyā times." };
-  }
-
-  const now = Date.now();
-  const notifications: Parameters<typeof LN.schedule>[0]["notifications"] = [];
-
-  for (let d = 0; d < DAYS_AHEAD; d++) {
-    const date = new Date();
-    date.setDate(date.getDate() + d);
-    date.setHours(12, 0, 0, 0);
-    for (const s of SESSION_ORDER) {
-      if (!settings.reminders[s]) continue;
-      const at = resolveReminderTime(s, settings, date);
-      if (!at || at.getTime() <= now + 30_000) continue;
-      notifications.push({
-        id: notifId(s, d),
-        title: SESSION_LABELS[s].title,
-        body: SESSION_LABELS[s].body,
-        channelId: CHANNEL_ID,
-        smallIcon: "ic_launcher_foreground",
-        schedule: { at, allowWhileIdle: true },
-      });
-    }
-  }
-
   try {
-    if (notifications.length) await LN.schedule({ notifications });
-  } catch (e) {
-    console.error("[trikaala] schedule failed", e);
-    return { scheduled: 0, reason: `Scheduling failed: ${(e as Error)?.message ?? e}` };
+    const LN = await plugin();
+    await ensureChannel();
+    await cancelAll();
+
+    if (settings.notificationsEnabled === false) return { scheduled: 0, reason: "Reminders are off." };
+    const perm = await ensurePermission(false);
+    if (perm !== "granted") return { scheduled: 0, reason: "Notification permission not granted." };
+
+    if ((settings.reminderMode ?? "calculated") === "calculated" && settings.lat == null) {
+      return { scheduled: 0, reason: "Set your location to compute Sandhyā times." };
+    }
+
+    const now = Date.now();
+    const notifications: Parameters<typeof LN.schedule>[0]["notifications"] = [];
+    const isAndroid = Capacitor.getPlatform() === "android";
+
+    for (let d = 0; d < DAYS_AHEAD; d++) {
+      const date = new Date();
+      date.setDate(date.getDate() + d);
+      date.setHours(12, 0, 0, 0);
+      for (const s of SESSION_ORDER) {
+        if (!settings.reminders[s]) continue;
+        const at = resolveReminderTime(s, settings, date);
+        if (!at || at.getTime() <= now + 30_000) continue;
+        notifications.push({
+          id: notifId(s, d),
+          title: SESSION_LABELS[s].title,
+          body: SESSION_LABELS[s].body,
+          ...(isAndroid ? { channelId: CHANNEL_ID, smallIcon: "ic_launcher_foreground" } : {}),
+          schedule: { at, allowWhileIdle: isAndroid },
+        });
+      }
+    }
+
+    if (notifications.length) {
+      await withNativeTimeout("Scheduling notifications", LN.schedule({ notifications }));
+    }
+    const updated = { ...settings, lastScheduledOn: new Date().toDateString() };
+    saveSettings(updated);
+    console.info("[Notifications] Scheduled reminders:", notifications.length);
+    return {
+      scheduled: notifications.length,
+      reason: notifications.length ? undefined : "No upcoming reminder times to schedule.",
+    };
+  } catch (error) {
+    console.error("[Notifications] Scheduling failed:", error);
+    const message = error instanceof Error ? error.message : String(error);
+    return { scheduled: 0, reason: `Scheduling failed: ${message}` };
   }
-  const s = { ...settings, lastScheduledOn: new Date().toDateString() };
-  saveSettings(s);
-  console.log("[trikaala] scheduled reminders:", notifications.length);
-  return {
-    scheduled: notifications.length,
-    reason: notifications.length ? undefined : "No upcoming reminder times to schedule.",
-  };
 }
 
 export async function cancelAllNotifications() {
